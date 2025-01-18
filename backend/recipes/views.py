@@ -2,11 +2,6 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import permissions, status, viewsets
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from users.paginators import FoodgramPagination
-
 from recipes.filters import IngredientFilterSet, RecipeFilterSet
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShopingCart, Tag)
@@ -14,6 +9,10 @@ from recipes.permissions import IsAuthorOrReadOnly
 from recipes.serializers import (FavoriteSerializer, IngredientSerializer,
                                  ReadRecipeSerializer, RecipeSerializer,
                                  ShopingCartSerializer, TagSerializer)
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from users.paginators import FoodgramPagination
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
