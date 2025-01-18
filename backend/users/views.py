@@ -8,11 +8,8 @@ from rest_framework.response import Response
 
 from users.models import Subscription
 from users.paginators import FoodgramPagination
-from users.serializers import (
-    FoodgramUserSerializer,
-    SetPasswordSerializer,
-    SubscribeSerializer
-)
+from users.serializers import (FoodgramUserSerializer, SetPasswordSerializer,
+                               SubscribeSerializer)
 
 User = get_user_model()
 
