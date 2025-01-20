@@ -9,7 +9,8 @@ from recipes.models import (Favorite, Ingredient, Recipe,
 class CookingTimeFilter(admin.SimpleListFilter):
     title = 'Время приготовления'
     parameter_name = 'cooking_time'
-    max_time = max(Recipe.objects.values_list('cooking_time', flat=True))
+    max_time = max(Recipe.objects.values_list('cooking_time', flat=True),
+                   default=1)
     min_time = MINIMAL_COOKING_TIME
     difference = max_time - min_time
     second_time = int(min_time + difference / 3)
