@@ -18,7 +18,7 @@ class Command(BaseCommand):
                 [Ingredient(
                     name=row[0],
                     measurement_unit=row[1]
-                ) for row in reader(ingredient_file)], ignore_conflicts=True
+                ) for row in reader(ingredient_file)], update_conflicts=True
             )
             self.stdout.write('Загрузка продуктов завершена')
         with open('data/tags.csv', 'r', encoding='utf-8') as tag_file:
@@ -26,6 +26,6 @@ class Command(BaseCommand):
                 [Tag(
                     name=row[0],
                     slug=row[1]
-                ) for row in reader(tag_file)], ignore_conflicts=True
+                ) for row in reader(tag_file)], update_conflicts=True
             )
             self.stdout.write('Загрузка тегов завершена')
