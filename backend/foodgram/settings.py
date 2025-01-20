@@ -43,9 +43,9 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'djoser',
     'django_filters',
-    'api.apps.ApiConfig',
+    'users.apps.UsersConfig',
     'recipes.apps.RecipesConfig',
-    'users.apps.UsersConfig'
+    'api.apps.ApiConfig'
 ]
 
 MIDDLEWARE = [
@@ -136,6 +136,10 @@ DJOSER = {
     'PERMISSIONS': {
         'user_list': ['rest_framework.permissions.AllowAny'],
     },
+    "SERIALIZERS": {
+        "user": "api.serializers.FoodgramUserSerializer",
+        "current_user": "api.serializers.FoodgramUserSerializer",
+    }
 }
 
 AUTH_USER_MODEL = 'users.FoodgramUser'

@@ -3,6 +3,7 @@ djangorestframework==3.12.4
 django-cors-headers==3.13.0
 django-filter==2.4.0
 djoser==2.1.0
+drf-extra-fields
 gunicorn==20.1.0
 psycopg2-binary==2.9.3
 Pillow==9.0.0
