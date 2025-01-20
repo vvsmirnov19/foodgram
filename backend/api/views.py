@@ -151,10 +151,18 @@ class FoodgramUserViewSet(UserViewSet):
     pagination_class = FoodgramPagination
     permission_classes = []
 
-    def get_permissions(self):
-        if self.action == 'me':
-            return [IsAuthenticated(),]
-        return super().get_permissions()
+    # def get_permissions(self):
+    #     if self.action == 'me':
+    #         return [IsAuthenticated(),]
+    #     return super().get_permissions()
+
+    @action(
+        detail=False,
+        methods=['get'],
+        permission_classes=[IsAuthenticated]
+    )
+    def me(self, request):
+        return super().me(request)
 
     @action(
         detail=False,
