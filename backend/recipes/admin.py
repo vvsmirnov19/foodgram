@@ -8,16 +8,13 @@ from recipes.models import (Favorite, Ingredient, Recipe,
 class CookingTimeFilter(admin.SimpleListFilter):
     title = 'Время приготовления'
     parameter_name = 'cooking_time'
-    quick_time_count = Recipe.objects.filter(cooking_time__lt=5).count()
-    middle_time_count = Recipe.objects.filter(cooking_time__lt=30).count()
-    long_count = Recipe.objects.filter(cooking_time__gt=30).count()
 
     def lookups(self, request, model_admin):
         return (
-            ('quick', f'Быстрее 5 мин. ({self.quick_time_count})'),
+            ('quick', 'Быстрее 5 мин.'),
             ('middle',
-             f'Быстрее 30 мин. ({self.middle_time_count})'),
-            ('long', f'Долго ({self.long_count})')
+             'Быстрее 30 мин.'),
+            ('long', 'Долго')
         )
 
     def queryset(self, request, queryset):
