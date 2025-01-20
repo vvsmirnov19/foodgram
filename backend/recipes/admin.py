@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
-from recipes.constants import MINIMAL_COOKING_TIME
 from recipes.models import (Favorite, Ingredient, Recipe,
                             RecipeIngredient, ShopingCart, Tag)
 
