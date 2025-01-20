@@ -136,10 +136,6 @@ DJOSER = {
     'PERMISSIONS': {
         'user_list': ['rest_framework.permissions.AllowAny'],
     },
-    "SERIALIZERS": {
-        "user": "api.serializers.FoodgramUserSerializer",
-        "current_user": "api.serializers.FoodgramUserSerializer",
-    }
 }
 
 AUTH_USER_MODEL = 'users.FoodgramUser'
