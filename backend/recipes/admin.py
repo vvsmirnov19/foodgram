@@ -30,11 +30,14 @@ class CookingTimeFilter(admin.SimpleListFilter):
         queriset_values = dict(
             quick=(1, 5),
             middle=(6, 30),
-            long=(31, max(queryset.values_list('cooking_time', flat=True)))
+            long=(31, 10000)
         )
-        return queryset.filter(
-            cooking_time__range=queriset_values.get(self.value)
-        )
+        print(self.value)
+        if self.value in queriset_values:
+            return queryset.filter(
+                cooking_time__range=queriset_values.get(self.value)
+            )
+        return queryset
 
 
 class RecipeCountMixin():
@@ -70,6 +73,7 @@ class FavoriteAndCartAdmin(admin.ModelAdmin):
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'author', 'favorite_count', 'tags_override',
                     'ingredients_override', 'cooking_time', 'image')
+                    # 'cooking_time', 'image')
     search_fields = ['name', 'author', 'tags']
     list_filter = ['tags', 'author', CookingTimeFilter]
     inlines = (IngredientsInLine, )
@@ -81,14 +85,24 @@ class RecipeAdmin(admin.ModelAdmin):
         return '\n'.join(recipe.tags.values_list('name', flat=True))
 
     def ingredients_override(self, recipe):
-        return '\n'.join('{name} {measurment_unit} {amount}'.format(
-            **recipe.ingredients.values('name', 'measurment_unit', 'amount')
-        ))
+        names = RecipeIngredient.objects.filter(
+            recipe=recipe
+        ).values_list('ingredient__name', flat=True)
+        measurement_units = RecipeIngredient.objects.filter(
+            recipe=recipe
+        ).values_list('ingredient__measurement_unit', flat=True)
+        amounts = RecipeIngredient.objects.filter(
+            recipe=recipe
+        ).values_list('amount', flat=True)
+        str = list()
+        for i in range(len(recipe.ingredients.all())):
+            str.append(f'{names[i]} {amounts[i]} {measurement_units[i]}')
+        return '\n'.join(str)
 
     @admin.display(description='Изображение')
     @mark_safe
-    def avatar(self, recipe):
-        return recipe.image.file
+    def image(self, recipe):
+        return f'<img src="{recipe.image.file}">'
 
 
 class UserSimpleListFilter(admin.SimpleListFilter):
@@ -97,7 +111,9 @@ class UserSimpleListFilter(admin.SimpleListFilter):
         return self.values
 
     def queryset(self, request, queryset):
-        return queryset.filter(**self.queriset_values.get(self.value))
+        if self.value in self.queriset_values:
+            return queryset.filter(**self.queriset_values.get(self.value))
+        return queryset
 
 
 class FollowersFilter(UserSimpleListFilter):
@@ -172,4 +188,4 @@ class FoodgramUserAdmin(UserAdmin):
     @admin.display(description='Аватар')
     @mark_safe
     def avatar(self, user):
-        return user.avatar.file
+        return f'<img src="{user.avatar.file}">'
