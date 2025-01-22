@@ -73,7 +73,6 @@ class FavoriteAndCartAdmin(admin.ModelAdmin):
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'author', 'favorite_count', 'tags_override',
                     'ingredients_override', 'cooking_time', 'image')
-                    # 'cooking_time', 'image')
     search_fields = ['name', 'author', 'tags']
     list_filter = ['tags', 'author', CookingTimeFilter]
     inlines = (IngredientsInLine, )
