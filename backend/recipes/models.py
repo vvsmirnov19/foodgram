@@ -1,13 +1,45 @@
-from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator
+from django.contrib.auth.models import AbstractUser
+from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 
-from .constants import MAX_LENGHT, MINIMAL_TIME
+from .constants import (
+    MAX_LENGHT, MAX_USER_LENGHT, MAX_LENGHT_EMAIL, MINIMAL_AMOUNT, MINIMAL_TIME
+)
 
-User = get_user_model()
+
+class FoodgramUser(AbstractUser):
+    email = models.EmailField(
+        unique=True,
+        max_length=MAX_LENGHT_EMAIL
+    )
+    avatar = models.ImageField(
+        upload_to='users/', null=True, blank=True
+    )
+    username = models.CharField(
+        verbose_name='Логин', max_length=MAX_USER_LENGHT, unique=True,
+        validators=[
+            RegexValidator(regex=r'[^\w.@+-]', inverse_match=True)
+        ]
+    )
+    first_name = models.CharField(
+        verbose_name='Имя', max_length=MAX_USER_LENGHT
+    )
+    last_name = models.CharField(
+        verbose_name='Фамилия', max_length=MAX_USER_LENGHT
+    )
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
+    USERNAME_FIELD = 'email'
+
+    class Meta:
+        ordering = ('username',)
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+
+    def __str__(self):
+        return self.email
 
 
-class Ingredient (models.Model):
+class Ingredient(models.Model):
     name = models.CharField(max_length=MAX_LENGHT, verbose_name='Название')
     measurement_unit = models.CharField(
         max_length=MAX_LENGHT,
@@ -27,8 +59,12 @@ class Ingredient (models.Model):
         return self.name
 
 
-class Tag (models.Model):
-    name = models.CharField(max_length=MAX_LENGHT, verbose_name='Название')
+class Tag(models.Model):
+    name = models.CharField(
+        max_length=MAX_LENGHT,
+        verbose_name='Название',
+        unique=True
+    )
     slug = models.SlugField(
         max_length=MAX_LENGHT,
         unique=True,
@@ -43,9 +79,9 @@ class Tag (models.Model):
         return self.name
 
 
-class Recipe (models.Model):
+class Recipe(models.Model):
     author = models.ForeignKey(
-        User,
+        FoodgramUser,
         on_delete=models.CASCADE,
         verbose_name='Автор'
     )
@@ -66,8 +102,7 @@ class Recipe (models.Model):
     text = models.TextField('Описание')
     pub_date = models.DateTimeField(
         verbose_name='Дата и время публикации',
-        auto_now=True,
-        db_index=True
+        auto_now=True
     )
     cooking_time = models.IntegerField(
         validators=[
@@ -87,7 +122,7 @@ class Recipe (models.Model):
         return self.name
 
 
-class RecipeIngredient (models.Model):
+class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
@@ -97,7 +132,7 @@ class RecipeIngredient (models.Model):
         on_delete=models.CASCADE,
     )
     amount = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(MINIMAL_TIME)], default=MINIMAL_TIME
+        validators=[MinValueValidator(MINIMAL_AMOUNT)], default=MINIMAL_AMOUNT
     )
 
     class Meta:
@@ -108,49 +143,72 @@ class RecipeIngredient (models.Model):
         ),)
 
 
-class FavoriteShopingCart(models.Model):
+class UserRecipeRelation(models.Model):
     user = models.ForeignKey(
-        User,
+        FoodgramUser,
         on_delete=models.CASCADE,
-        verbose_name='Пользователь'
+        verbose_name='Пользователь',
+        related_name='%(class)ss'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        verbose_name='Рецепт'
+        verbose_name='Рецепт',
+        related_name='%(class)ss'
     )
 
     class Meta:
         abstract = True
+        constraints = (
+            models.UniqueConstraint(
+                fields=('user', 'recipe'),
+                name='unique_%(class)ss'
+            ),
+        )
+
+    def __str__(self):
+        return f'{self.user.username} добавил к себе {self.recipe.name}'
 
 
-class Favorite(FavoriteShopingCart):
+class Favorite(UserRecipeRelation):
 
-    class Meta(FavoriteShopingCart.Meta):
-        default_related_name = 'favorites'
+    class Meta(UserRecipeRelation.Meta):
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
         ordering = ('user',)
-        constraints = (models.UniqueConstraint(
-            fields=['user', 'recipe'],
-            name='unique_favorite_recipe'
-        ),)
-
-    def __str__(self):
-        return f'{self.recipe.name} добавлен в избранное {self.user.username}'
 
 
-class ShopingCart(FavoriteShopingCart):
+class ShopingCart(UserRecipeRelation):
 
-    class Meta(FavoriteShopingCart.Meta):
-        default_related_name = 'shopingcart'
+    class Meta(UserRecipeRelation.Meta):
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Список покупок'
         ordering = ('user',)
-        constraints = (models.UniqueConstraint(
-            fields=['user', 'recipe'],
-            name='unique_shopingcart'
-        ),)
+
+
+class Subscription(models.Model):
+    follower = models.ForeignKey(
+        FoodgramUser,
+        verbose_name='Подписчик',
+        related_name='followers',
+        on_delete=models.CASCADE
+    )
+    author = models.ForeignKey(
+        FoodgramUser,
+        verbose_name='Автор',
+        related_name='authors',
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        constraints = (
+            models.UniqueConstraint(
+                fields=('follower', 'author'),
+                name='unique_subscription'
+            ),
+        )
 
     def __str__(self):
-        return f'{self.recipe.name} добавлен в корзину {self.user.username}'
+        return f'{self.follower} подписан на {self.author}'

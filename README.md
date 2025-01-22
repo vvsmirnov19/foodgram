@@ -55,7 +55,8 @@ sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/col
 ```
 Заполняем таблицы Ingredient и Tag
 ```
-sudo docker compose -f docker-compose.production.yml exec backend python manage.py loadcsv
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py loadingredients
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py loadtags
 ```
 ## Доступ к документации API
 Находясь в папке infra, выполните команду docker-compose up. При выполнении этой команды контейнер frontend, описанный в docker-compose.yml, подготовит файлы, необходимые для работы фронтенд-приложения, а затем прекратит свою работу.
@@ -109,7 +110,8 @@ python manage.py migrate
 ```
 7. Заполняем таблицы Ingredient и Tag
 ```
-python manage.py loadcsv
+python manage.py loadingredients
+python manage.py loadtags
 ```
 8. Запускаем проект
 ```

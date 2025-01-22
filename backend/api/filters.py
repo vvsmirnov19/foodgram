@@ -29,7 +29,7 @@ class RecipeFilterSet(FilterSet):
         user = self.request.user
         if user.is_authenticated:
             if value:
-                return recipes.filter(shopingcart__user=user)
+                return recipes.filter(shopingcarts__user=user)
         return recipes
 
 

@@ -43,7 +43,6 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'djoser',
     'django_filters',
-    'users.apps.UsersConfig',
     'recipes.apps.RecipesConfig',
     'api.apps.ApiConfig'
 ]
@@ -78,7 +77,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'foodgram.wsgi.application'
 
-DATABASES = SQLITE if os.getenv('DEBUG') == 'True' else POSTGRE
+# DATABASES = SQLITE if os.getenv('DEBUG') == 'True' else POSTGRE
+DATABASES = SQLITE
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -136,6 +136,10 @@ DJOSER = {
     'PERMISSIONS': {
         'user_list': ['rest_framework.permissions.AllowAny'],
     },
+    'SERIALIZERS': {
+        'user': 'api.serializers.FoodgramUserSerializer',
+        'current_user': 'api.serializers.FoodgramUserSerializer',
+    }
 }
 
-AUTH_USER_MODEL = 'users.FoodgramUser'
+AUTH_USER_MODEL = 'recipes.FoodgramUser'

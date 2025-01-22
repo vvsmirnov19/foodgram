@@ -1,8 +1,8 @@
-import os
-
 from django.contrib.auth import get_user_model
-from django.http import FileResponse
+from django.db.models import Sum
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from rest_framework import permissions, status, viewsets
@@ -14,14 +14,16 @@ from rest_framework.response import Response
 from api.filters import IngredientFilterSet, RecipeFilterSet
 from api.paginators import FoodgramPagination
 from api.permissions import IsAuthorOrReadOnly
-from api.serializers import (FoodgramUserSerializer, IngredientSerializer,
-                             ReadRecipeSerializer, RecipeSerializer,
-                             SmallRecipeSerializer, SubscribeSerializer,
-                             TagSerializer)
-from recipes.models import (Favorite, Ingredient, Recipe,
-                            ShopingCart, Tag)
-from recipes.shopping_cart import form_shopping_cart
-from users.models import Subscription
+from api.serializers import (
+    FoodgramUserSerializer, IngredientSerializer,
+    ReadRecipeSerializer, RecipeSerializer, SmallRecipeSerializer,
+    UserSubscribingSerializer, TagSerializer
+)
+from api.shopping_cart import form_shopping_cart
+from recipes.models import (
+    Favorite, Ingredient, Recipe, RecipeIngredient,
+    ShopingCart, Subscription, Tag
+)
 
 User = get_user_model()
 
@@ -56,34 +58,34 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return ReadRecipeSerializer
         return RecipeSerializer
 
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
     @staticmethod
     def favorite_and_shopping_add(pk, model, request, message):
-        recipe = get_object_or_404(Recipe, id=pk)
-        item = model.objects.filter(
+        item, created = model.objects.get_or_create(
             user=request.user,
-            recipe=recipe
+            recipe=get_object_or_404(Recipe, id=pk)
         )
-        if item.exists():
+        if not created:
             raise ValidationError(f'Данный рецепт уже в {message}!')
-        created_item = model.objects.create(
-            user=request.user,
-            recipe=recipe
-        )
         return Response(
-            SmallRecipeSerializer(created_item.recipe).data,
+            SmallRecipeSerializer(item.recipe).data,
             status=status.HTTP_201_CREATED
         )
 
     @staticmethod
     def favorite_and_shopping_delete(pk, model, request, message):
+        # проверяем, что искомый рецепт существует
         recipe = get_object_or_404(Recipe, id=pk)
-        item = model.objects.filter(
-            user=request.user,
-            recipe=recipe
-        ).first()
-        if not item:
+        try:
+            get_object_or_404(
+                model,
+                user=request.user,
+                recipe=recipe
+            ).delete()
+        except Http404:
             raise ValidationError(f'Рецепта нет в {message}!')
-        item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
@@ -124,8 +126,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[permissions.IsAuthenticated]
     )
     def download_shopping_cart(self, request):
+        shoping_cart = ShopingCart.objects.filter(
+            user=request.user
+        ).values('recipe', 'recipe__name')
+        recipes = [item['recipe'] for item in shoping_cart]
+        recipes_names = [item['recipe__name'] for item in shoping_cart]
+        ingredients = RecipeIngredient.objects.filter(
+            recipe__in=recipes
+        ).values('ingredient__name', 'ingredient__measurement_unit').annotate(
+            amount=Sum('amount')
+        ).order_by('ingredient__name')
         return FileResponse(
-            form_shopping_cart(request),
+            form_shopping_cart(recipes_names, ingredients),
             as_attachment=True,
             filename='cart.txt'
         )
@@ -139,10 +151,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_link(self, request, pk):
         if not Recipe.objects.filter(id=pk).exists():
             raise ValidationError(
-                'Такого рецепта не существует!'
+                f'Рецепта с id {pk} не существует!'
             )
-        return Response({'short-link': request.build_absolute_uri(f'/s/{pk}')},
-                        status=status.HTTP_200_OK)
+        return Response(
+            {'short-link': request.build_absolute_uri(
+                reverse("recipes:short_link", args=[pk])
+            )},
+            status=status.HTTP_200_OK
+        )
 
 
 class FoodgramUserViewSet(UserViewSet):
@@ -151,16 +167,10 @@ class FoodgramUserViewSet(UserViewSet):
     pagination_class = FoodgramPagination
     permission_classes = []
 
-    @action(
-        detail=False,
-        methods=['get'],
-        permission_classes=[IsAuthenticated]
-    )
-    def me(self, request):
-        return Response(
-            FoodgramUserSerializer(request.user).data,
-            status=status.HTTP_200_OK
-        )
+    def get_permissions(self):
+        if self.action == 'me':
+            self.permission_classes = [IsAuthenticated, ]
+        return super().get_permissions()
 
     @action(
         detail=False,
@@ -188,10 +198,9 @@ class FoodgramUserViewSet(UserViewSet):
     def avatar_delete(self, request):
         if request.user.avatar is None:
             raise ValidationError('Аватар не установлен!')
-        filepath = str(request.user.avatar.file)
+        request.user.avatar.delete()
         request.user.avatar = None
         request.user.save()
-        os.remove(filepath)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
@@ -200,18 +209,18 @@ class FoodgramUserViewSet(UserViewSet):
         permission_classes=[IsAuthenticated]
     )
     def subscriptions(self, request):
-        recipes_limit = request.query_params.get('recipes_limit')
         subscriptions_items = request.user.followers.all()
         subscriptions = [
             subscription.author for subscription in subscriptions_items
         ]
         paginator = self.paginate_queryset(subscriptions)
-        serializer = SubscribeSerializer(
-            paginator,
-            context={'request': request, 'recipes_limit': recipes_limit},
-            many=True
+        return self.get_paginated_response(
+            UserSubscribingSerializer(
+                paginator,
+                context={'request': request},
+                many=True
+            ).data
         )
-        return self.get_paginated_response(serializer.data)
 
     @action(
         detail=True,
@@ -220,21 +229,19 @@ class FoodgramUserViewSet(UserViewSet):
     )
     def subscribe(self, request, id):
         author = get_object_or_404(User, id=id)
-        if author.id == request.user.id:
+        if author == request.user:
             raise ValidationError('Нельзя подписаться на самого себя!')
-        subscription = Subscription.objects.filter(
+        subscription, created = Subscription.objects.get_or_create(
             follower=request.user,
             author=author
         )
-        if subscription.exists():
-            raise ValidationError('Вы уже подписаны на этого пользователя!')
-        created_subscription = Subscription.objects.create(
-            follower=request.user,
-            author=author
-        ).author
+        if not created:
+            raise ValidationError(
+                f'Вы уже подписаны на пользователя {author.username}!'
+            )
         return Response(
-            SubscribeSerializer(
-                created_subscription,
+            UserSubscribingSerializer(
+                subscription.author,
                 context={
                     'request': request,
                 }
@@ -243,14 +250,16 @@ class FoodgramUserViewSet(UserViewSet):
 
     @subscribe.mapping.delete
     def subscribe_delete(self, request, id):
+        # проверяем, что искомый автор существует
         author = get_object_or_404(User, id=id)
-        subscription = Subscription.objects.filter(
-            follower=request.user,
-            author=author
-        )
-        if not subscription.exists():
+        try:
+            get_object_or_404(
+                Subscription,
+                follower=request.user,
+                author=author
+            ).delete()
+        except Http404:
             raise ValidationError(
-                'Вы не были подписаны на этого пользователя!'
+                f'Вы не были подписаны на пользователя {author.username}!'
             )
-        subscription.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
