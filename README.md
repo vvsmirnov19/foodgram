@@ -53,10 +53,15 @@ sudo docker compose -f docker-compose.production.yml exec backend python manage.
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
 sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /static/static/
 ```
-Заполняем таблицы Ingredient и Tag
+Заполняем таблицы Ingredient и Tag через файлы csv
 ```
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py loadingredients
 sudo docker compose -f docker-compose.production.yml exec backend python manage.py loadtags
+```
+или файлы json
+```
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py loadingredientsjson
+sudo docker compose -f docker-compose.production.yml exec backend python manage.py loadtagsjson
 ```
 ## Доступ к документации API
 Находясь в папке infra, выполните команду docker-compose up. При выполнении этой команды контейнер frontend, описанный в docker-compose.yml, подготовит файлы, необходимые для работы фронтенд-приложения, а затем прекратит свою работу.
@@ -108,10 +113,15 @@ DB_POSTGRE
 ```
 python manage.py migrate
 ```
-7. Заполняем таблицы Ingredient и Tag
+7. Заполняем таблицы Ingredient и Tag через файлы csv
 ```
 python manage.py loadingredients
 python manage.py loadtags
+```
+или файлы json
+```
+python manage.py loadingredientsjson
+python manage.py loadtagsjson
 ```
 8. Запускаем проект
 ```

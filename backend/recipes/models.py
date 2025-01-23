@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
@@ -37,6 +38,9 @@ class FoodgramUser(AbstractUser):
 
     def __str__(self):
         return self.email
+
+
+User = get_user_model()
 
 
 class Ingredient(models.Model):
@@ -81,7 +85,7 @@ class Tag(models.Model):
 
 class Recipe(models.Model):
     author = models.ForeignKey(
-        FoodgramUser,
+        User,
         on_delete=models.CASCADE,
         verbose_name='Автор'
     )
@@ -145,26 +149,26 @@ class RecipeIngredient(models.Model):
 
 class UserRecipeRelation(models.Model):
     user = models.ForeignKey(
-        FoodgramUser,
+        User,
         on_delete=models.CASCADE,
-        verbose_name='Пользователь',
-        related_name='%(class)ss'
+        verbose_name='Пользователь'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        verbose_name='Рецепт',
-        related_name='%(class)ss'
+        verbose_name='Рецепт'
     )
 
     class Meta:
         abstract = True
+        default_related_name = '%(class)ss'
         constraints = (
             models.UniqueConstraint(
                 fields=('user', 'recipe'),
                 name='unique_%(class)ss'
             ),
         )
+        ordering = ('user',)
 
     def __str__(self):
         return f'{self.user.username} добавил к себе {self.recipe.name}'
@@ -175,7 +179,6 @@ class Favorite(UserRecipeRelation):
     class Meta(UserRecipeRelation.Meta):
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
-        ordering = ('user',)
 
 
 class ShopingCart(UserRecipeRelation):
@@ -183,18 +186,17 @@ class ShopingCart(UserRecipeRelation):
     class Meta(UserRecipeRelation.Meta):
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Список покупок'
-        ordering = ('user',)
 
 
 class Subscription(models.Model):
     follower = models.ForeignKey(
-        FoodgramUser,
+        User,
         verbose_name='Подписчик',
         related_name='followers',
         on_delete=models.CASCADE
     )
     author = models.ForeignKey(
-        FoodgramUser,
+        User,
         verbose_name='Автор',
         related_name='authors',
         on_delete=models.CASCADE

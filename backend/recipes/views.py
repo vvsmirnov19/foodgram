@@ -6,6 +6,6 @@ from recipes.models import Recipe
 def decode_link(request, id):
     if not Recipe.objects.filter(id=id).exists():
         raise ValidationError(
-            'Такого рецепта не существует!'
+            f'Рецепта с id {id} не существует!'
         )
     return redirect(f'/recipes/{id}')

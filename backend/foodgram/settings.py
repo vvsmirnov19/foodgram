@@ -77,8 +77,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'foodgram.wsgi.application'
 
-# DATABASES = SQLITE if os.getenv('DEBUG') == 'True' else POSTGRE
-DATABASES = SQLITE
+DATABASES = SQLITE if os.getenv('DEBUG') == 'True' else POSTGRE
 
 AUTH_PASSWORD_VALIDATORS = [
     {

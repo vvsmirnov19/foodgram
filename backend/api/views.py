@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
-from django.http import FileResponse, Http404
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
@@ -76,16 +76,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @staticmethod
     def favorite_and_shopping_delete(pk, model, request, message):
-        # проверяем, что искомый рецепт существует
-        recipe = get_object_or_404(Recipe, id=pk)
-        try:
-            get_object_or_404(
-                model,
-                user=request.user,
-                recipe=recipe
-            ).delete()
-        except Http404:
-            raise ValidationError(f'Рецепта нет в {message}!')
+        get_object_or_404(model, user=request.user, recipe_id=pk).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
@@ -169,7 +160,7 @@ class FoodgramUserViewSet(UserViewSet):
 
     def get_permissions(self):
         if self.action == 'me':
-            self.permission_classes = [IsAuthenticated, ]
+            return [IsAuthenticated(), ]
         return super().get_permissions()
 
     @action(
@@ -250,16 +241,5 @@ class FoodgramUserViewSet(UserViewSet):
 
     @subscribe.mapping.delete
     def subscribe_delete(self, request, id):
-        # проверяем, что искомый автор существует
-        author = get_object_or_404(User, id=id)
-        try:
-            get_object_or_404(
-                Subscription,
-                follower=request.user,
-                author=author
-            ).delete()
-        except Http404:
-            raise ValidationError(
-                f'Вы не были подписаны на пользователя {author.username}!'
-            )
+        get_object_or_404(Subscription, follower=request.user, author_id=id)
         return Response(status=status.HTTP_204_NO_CONTENT)

@@ -17,25 +17,26 @@ admin.site.unregister(Group)
 class CookingTimeFilter(admin.SimpleListFilter):
     title = 'Время приготовления'
     parameter_name = 'cooking_time'
+    VALUES = (
+        ('quick', 'Быстрее 5 мин.'),
+        ('middle', 'Быстрее 30 мин.'),
+        ('long', 'Долго')
+    )
+    MIDDLE_BORDER = 5
+    LONG_BORDER = 30
+    QUERYSET_VALUES = dict(
+        quick=(0, MIDDLE_BORDER),
+        middle=(MIDDLE_BORDER + 1, LONG_BORDER),
+        long=(LONG_BORDER + 1, 10**10)
+    )
 
     def lookups(self, request, model_admin):
-        return (
-            ('quick', 'Быстрее 5 мин.'),
-            ('middle',
-             'Быстрее 30 мин.'),
-            ('long', 'Долго')
-        )
+        return self.VALUES
 
     def queryset(self, request, queryset):
-        queriset_values = dict(
-            quick=(1, 5),
-            middle=(6, 30),
-            long=(31, 10000)
-        )
-        print(self.value)
-        if self.value in queriset_values:
+        if self.value() in self.QUERYSET_VALUES:
             return queryset.filter(
-                cooking_time__range=queriset_values.get(self.value)
+                cooking_time__range=self.QUERYSET_VALUES.get(self.value())
             )
         return queryset
 
@@ -81,22 +82,16 @@ class RecipeAdmin(admin.ModelAdmin):
         return recipe.favorites.count()
 
     def tags_override(self, recipe):
-        return '\n'.join(recipe.tags.values_list('name', flat=True))
+        return '<br>'.join(recipe.tags.values_list('name', flat=True))
 
     def ingredients_override(self, recipe):
-        names = RecipeIngredient.objects.filter(
-            recipe=recipe
-        ).values_list('ingredient__name', flat=True)
-        measurement_units = RecipeIngredient.objects.filter(
-            recipe=recipe
-        ).values_list('ingredient__measurement_unit', flat=True)
-        amounts = RecipeIngredient.objects.filter(
-            recipe=recipe
-        ).values_list('amount', flat=True)
-        str = list()
-        for i in range(len(recipe.ingredients.all())):
-            str.append(f'{names[i]} {amounts[i]} {measurement_units[i]}')
-        return '\n'.join(str)
+        return '<br>'.join([
+            '{ingredient__name} {ingredient__measurement_unit} {amount}'
+            .format(**ingredient) for ingredient in RecipeIngredient
+            .objects.filter(recipe=recipe).values(
+                'ingredient__name', 'ingredient__measurement_unit', 'amount'
+            )
+        ])
 
     @admin.display(description='Изображение')
     @mark_safe
@@ -107,50 +102,52 @@ class RecipeAdmin(admin.ModelAdmin):
 class UserSimpleListFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
-        return self.values
+        return self.VALUES
 
     def queryset(self, request, queryset):
-        if self.value in self.queriset_values:
-            return queryset.filter(**self.queriset_values.get(self.value))
+        if self.value() in self.QUERYSET_VALUES:
+            return queryset.distinct().filter(
+                **self.QUERYSET_VALUES.get(self.value())
+            )
         return queryset
 
 
 class FollowersFilter(UserSimpleListFilter):
     title = 'Наличие подписчиков'
     parameter_name = 'followers_count'
-    values = (
+    VALUES = (
         ('lt_1', 'Нет подписчиков'),
         ('gt_1', 'Есть подписчики'),
     )
-    queriset_values = dict(
-        lt_1={'followers_count__lt': 1},
-        gt_1={'followers_count__gt': 1}
+    QUERYSET_VALUES = dict(
+        lt_1={'followers__isnull': True},
+        gt_1={'followers__isnull': False}
     )
 
 
 class AuthorsFilter(UserSimpleListFilter):
     title = 'Наличие подписок'
     parameter_name = 'authors_count'
-    values = (
+    VALUES = (
         ('lt_1', 'Нет подписок'),
         ('gt_1', 'Есть подписки'),
     )
-    queriset_values = dict(
-        lt_1={'authors_count__lt': 1},
-        gt_1={'authors_count__gt': 1}
+    QUERYSET_VALUES = dict(
+        lt_1={'authors__isnull': True},
+        gt_1={'authors__isnull': False}
     )
 
 
 class RecipesFilter(UserSimpleListFilter):
     title = 'Наличие рецептов'
     parameter_name = 'recipe_count'
-    values = (
+    VALUES = (
         ('lt_1', 'Нет рецептов'),
         ('gt_1', 'Есть рецепты'),
     )
-    queriset_values = dict(
-        lt_1={'recipe_count__lt': 1},
-        gt_1={'recipe_count__gt': 1}
+    QUERYSET_VALUES = dict(
+        lt_1={'recipes__isnull': True},
+        gt_1={'recipes__isnull': False}
     )
 
 
