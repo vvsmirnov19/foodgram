@@ -119,7 +119,9 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @admin.display(description='Изображение')
     def image(self, recipe):
-        return mark_safe(f'<img src="{recipe.image.url}" style="max-height: 200px;"/>')
+        return mark_safe(
+            f'<img src="{recipe.image.url}" style="max-height: 200px;"/>'
+        )
 
 
 class UserSimpleListFilter(admin.SimpleListFilter):
