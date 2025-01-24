@@ -26,16 +26,13 @@ class CookingTimeFilter(admin.SimpleListFilter):
         middle=(MIDDLE_BORDER + 1, LONG_BORDER),
         long=(LONG_BORDER + 1, 10**10)
     )
-    count_list = [
-        Recipe.objects.filter(
-            cooking_time__range=value
-        ).count() for value in QUERYSET_VALUES.values()]
 
     def lookups(self, request, model_admin):
         count_list = [
             model_admin.get_queryset(request).filter(
                 cooking_time__range=value
-            ).count() for value in self.QUERYSET_VALUES.values()]
+            ).count() for value in self.QUERYSET_VALUES.values()
+        ]
         return (
             ('quick',
              f'Быстрее {self.MIDDLE_BORDER+1} мин. ({count_list[0]})'),
