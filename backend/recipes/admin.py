@@ -120,7 +120,7 @@ class RecipeAdmin(admin.ModelAdmin):
     @admin.display(description='Изображение')
     @mark_safe
     def image(self, recipe):
-        return f'<img src="{recipe.image.url}">'
+        return f'<img src="{recipe.image.url}" style="max-height: 200px;"/>'
 
 
 class UserSimpleListFilter(admin.SimpleListFilter):
@@ -220,4 +220,4 @@ class FoodgramUserAdmin(UserAdmin):
     @admin.display(description='Аватар')
     @mark_safe
     def avatar(self, user):
-        return f'<img src="{user.avatar.url}">'
+        return f'<img src="{user.avatar.url}"/>'
