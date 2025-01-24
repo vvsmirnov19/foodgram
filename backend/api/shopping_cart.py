@@ -6,17 +6,17 @@ REPORT_NAME = 'Список покупок'
 
 INGREDIENTS_LIST = 'Список продуктов'
 
-INGREDIENTS_COLUMNS = '№\tПродукт\tМера\tЕдиница измерения'
+INGREDIENTS_COLUMNS = '№, Продукт, Мера, Единица измерения'
 
 RECIPES_LIST = 'Список рецептов'
 
-TEMPLATE_INGREDIENTS = '{}\t{}\t{}\t{}'
+TEMPLATE_INGREDIENTS = '{} {} {} {}.'
 
-TEMPLATE_TAGS = '{}\t{}'
+TEMPLATE_RECIPES = '{} {}'
 
 
 def form_shopping_cart(recipes_names, ingredients):
-    date = dt.date.today().strftime('%d-%m-%y')
+    date = dt.date.today().strftime('%d %B %Y')
     ingredients_to_text = DELIMETER.join([
         TEMPLATE_INGREDIENTS.format(
             number,
@@ -26,7 +26,7 @@ def form_shopping_cart(recipes_names, ingredients):
         ) for number, ingredient in enumerate(ingredients, 1)
     ])
     recipes_to_text = DELIMETER.join(
-        (TEMPLATE_TAGS.format(
+        (TEMPLATE_RECIPES.format(
             number, name
         ) for number, name in enumerate(recipes_names, 1))
     )

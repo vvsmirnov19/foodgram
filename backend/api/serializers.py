@@ -23,16 +23,10 @@ class FoodgramUserSerializer(UserSerializer):
         fields = (*UserSerializer.Meta.fields, 'avatar', 'is_subscribed')
 
     def validate_username(username):
-        # validator = RegexValidator(
-        #     regex=r'^[\w.@+-]+\z',
-        #     inverse_match=True,
-        #     message='Логин должен состоять из букв, цифр, знаков .@+-'
-        # )
         RegexValidator(
-            username,
             regex=r'^[\w.@+-]+\z',
             message='Логин должен состоять из букв, цифр, знаков .@+-'
-        )
+        )(username)
         return username
 
     def get_is_subscribed(self, author):

@@ -4,9 +4,11 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Group
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.utils.translation import gettext_lazy as _
 
 from recipes.models import (Favorite, Ingredient, Recipe,
-                            RecipeIngredient, ShopingCart, Tag)
+                            RecipeIngredient, ShopingCart,
+                            Subscription, Tag)
 
 
 User = get_user_model()
@@ -17,11 +19,6 @@ admin.site.unregister(Group)
 class CookingTimeFilter(admin.SimpleListFilter):
     title = 'Время приготовления'
     parameter_name = 'cooking_time'
-    VALUES = (
-        ('quick', 'Быстрее 5 мин.'),
-        ('middle', 'Быстрее 30 мин.'),
-        ('long', 'Долго')
-    )
     MIDDLE_BORDER = 5
     LONG_BORDER = 30
     QUERYSET_VALUES = dict(
@@ -29,9 +26,22 @@ class CookingTimeFilter(admin.SimpleListFilter):
         middle=(MIDDLE_BORDER + 1, LONG_BORDER),
         long=(LONG_BORDER + 1, 10**10)
     )
+    count_list = [
+        Recipe.objects.filter(
+            cooking_time__range=value
+        ).count() for value in QUERYSET_VALUES.values()]
 
     def lookups(self, request, model_admin):
-        return self.VALUES
+        count_list = [
+            model_admin.get_queryset(request).filter(
+                cooking_time__range=value
+            ).count() for value in self.QUERYSET_VALUES.values()]
+        return (
+            ('quick',
+             f'Быстрее {self.MIDDLE_BORDER+1} мин. ({count_list[0]})'),
+            ('middle', f'Быстрее {self.LONG_BORDER+1} мин. ({count_list[1]})'),
+            ('long', f'Дольше {self.LONG_BORDER} мин. ({count_list[2]})')
+        )
 
     def queryset(self, request, queryset):
         if self.value() in self.QUERYSET_VALUES:
@@ -51,12 +61,15 @@ class RecipeCountMixin():
 @admin.register(Ingredient)
 class IngridientAdmin(RecipeCountMixin, admin.ModelAdmin):
     list_display = ('name', 'measurement_unit', 'recipe_count')
+    list_filter = ('measurement_unit', )
     search_fields = ('name', 'measurement_unit',)
 
 
 class IngredientsInLine(admin.StackedInline):
     model = RecipeIngredient
     extra = 1
+    verbose_name = 'Продукт'
+    verbose_name_plural = 'Продукты'
 
 
 @admin.register(Tag)
@@ -70,25 +83,39 @@ class FavoriteAndCartAdmin(admin.ModelAdmin):
     list_display = ('user', 'recipe', )
 
 
+@admin.register(Subscription)
+class SubscriptionAdmin(admin.ModelAdmin):
+    list_display = ('follower', 'author')
+
+
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'author', 'favorite_count', 'tags_override',
                     'ingredients_override', 'cooking_time', 'image')
-    search_fields = ['name', 'author', 'tags']
+    search_fields = (
+        'name', 'author__first_name',
+        'author__last_name', 'author__username', 'tags__name'
+    )
     list_filter = ['tags', 'author', CookingTimeFilter]
     inlines = (IngredientsInLine, )
 
+    @admin.display(description='Избранное')
     def favorite_count(self, recipe):
         return recipe.favorites.count()
 
+    @admin.display(description='Теги')
+    @mark_safe
     def tags_override(self, recipe):
         return '<br>'.join(recipe.tags.values_list('name', flat=True))
 
+    @admin.display(description='Продукты')
+    @mark_safe
     def ingredients_override(self, recipe):
         return '<br>'.join([
             '{ingredient__name} {ingredient__measurement_unit} {amount}'
-            .format(**ingredient) for ingredient in RecipeIngredient
-            .objects.filter(recipe=recipe).values(
+            .format(
+                **ingredient
+            ) for ingredient in recipe.recipe_ingredients.values(
                 'ingredient__name', 'ingredient__measurement_unit', 'amount'
             )
         ])
@@ -96,7 +123,7 @@ class RecipeAdmin(admin.ModelAdmin):
     @admin.display(description='Изображение')
     @mark_safe
     def image(self, recipe):
-        return f'<img src="{recipe.image.file}">'
+        return f'<img src="{recipe.image.url}">'
 
 
 class UserSimpleListFilter(admin.SimpleListFilter):
@@ -154,11 +181,23 @@ class RecipesFilter(UserSimpleListFilter):
 @admin.register(User)
 class FoodgramUserAdmin(UserAdmin):
     list_display = ('id', 'email', 'username', 'full_name',
-                    'password', 'avatar', 'followers_count',
+                    'avatar', 'followers_count',
                     'authors_count', 'recipe_count')
     search_fields = ('email', 'username',)
     list_filter = (FollowersFilter, AuthorsFilter, RecipesFilter)
     ordering = ('username',)
+    fieldsets = (
+        (None, {'fields': ('username',)}),
+        (_('Personal info'), {'fields': (
+            'first_name', 'last_name', 'email', 'avatar'
+        )}),
+        (_('Permissions'), {
+            'fields': (
+                'is_active', 'is_staff', 'is_superuser', 'user_permissions'
+            ),
+        }),
+        (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
+    )
 
     @admin.display(description='Полное имя')
     def full_name(self, user):
@@ -184,4 +223,4 @@ class FoodgramUserAdmin(UserAdmin):
     @admin.display(description='Аватар')
     @mark_safe
     def avatar(self, user):
-        return f'<img src="{user.avatar.file}">'
+        return f'<img src="{user.avatar.url}">'

@@ -37,7 +37,7 @@ class FoodgramUser(AbstractUser):
         verbose_name_plural = 'Пользователи'
 
     def __str__(self):
-        return self.email
+        return self.username
 
 
 User = get_user_model()
@@ -113,7 +113,7 @@ class Recipe(models.Model):
             MinValueValidator(MINIMAL_TIME)
         ],
         default=MINIMAL_TIME,
-        verbose_name='Время приготовления, минуты'
+        verbose_name='Время (мин)'
     )
 
     class Meta:
