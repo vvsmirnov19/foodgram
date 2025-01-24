@@ -25,7 +25,7 @@ MONTHS = [
 
 
 def form_shopping_cart(recipes_names, ingredients):
-    date = f'{dt.now().day} {MONTHS[dt.now().month]} {dt.now().year}'
+    date = f'{dt.now().day} {MONTHS[int(dt.now().month) - 1]} {dt.now().year}'
     ingredients_to_text = DELIMETER.join([
         TEMPLATE_INGREDIENTS.format(
             number,
