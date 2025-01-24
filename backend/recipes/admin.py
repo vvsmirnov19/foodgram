@@ -94,7 +94,6 @@ class RecipeAdmin(admin.ModelAdmin):
         'author__last_name', 'author__username', 'tags__name'
     )
     list_filter = ['tags', 'author', CookingTimeFilter]
-    readonly_fields = ['image']
     inlines = (IngredientsInLine, )
 
     @admin.display(description='Избранное')
@@ -119,9 +118,8 @@ class RecipeAdmin(admin.ModelAdmin):
         ])
 
     @admin.display(description='Изображение')
-    @mark_safe
     def image(self, recipe):
-        return f'<img src="{recipe.image.url}" style="max-height: 200px;"/>'
+        return mark_safe(f'<img src="{recipe.image.url}" style="max-height: 200px;"/>')
 
 
 class UserSimpleListFilter(admin.SimpleListFilter):
@@ -182,7 +180,6 @@ class FoodgramUserAdmin(UserAdmin):
                     'avatar', 'followers_count',
                     'authors_count', 'recipe_count')
     search_fields = ('email', 'username',)
-    readonly_fields = ['avatar']
     list_filter = (FollowersFilter, AuthorsFilter, RecipesFilter)
     ordering = ('username',)
     fieldsets = (
@@ -220,6 +217,5 @@ class FoodgramUserAdmin(UserAdmin):
         return count
 
     @admin.display(description='Аватар')
-    @mark_safe
     def avatar(self, user):
-        return f'<img src="{user.avatar.url}"/>'
+        return mark_safe(f'<img src="{user.avatar.url}"/>')
