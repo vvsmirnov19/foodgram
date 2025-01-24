@@ -94,6 +94,7 @@ class RecipeAdmin(admin.ModelAdmin):
         'author__last_name', 'author__username', 'tags__name'
     )
     list_filter = ['tags', 'author', CookingTimeFilter]
+    readonly_fields = ['image']
     inlines = (IngredientsInLine, )
 
     @admin.display(description='Избранное')
@@ -181,6 +182,7 @@ class FoodgramUserAdmin(UserAdmin):
                     'avatar', 'followers_count',
                     'authors_count', 'recipe_count')
     search_fields = ('email', 'username',)
+    readonly_fields = ['avatar']
     list_filter = (FollowersFilter, AuthorsFilter, RecipesFilter)
     ordering = ('username',)
     fieldsets = (
