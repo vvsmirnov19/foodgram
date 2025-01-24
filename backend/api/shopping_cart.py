@@ -10,9 +10,9 @@ INGREDIENTS_COLUMNS = '№, Продукт, Мера, Единица измер�
 
 RECIPES_LIST = 'Список рецептов'
 
-TEMPLATE_INGREDIENTS = '{} {} {} {}.'
+TEMPLATE_INGREDIENTS = '{}. {} {} {}.'
 
-TEMPLATE_RECIPES = '{} {}'
+TEMPLATE_RECIPES = '{}. {}'
 
 
 def form_shopping_cart(recipes_names, ingredients):

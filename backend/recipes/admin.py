@@ -36,8 +36,8 @@ class CookingTimeFilter(admin.SimpleListFilter):
         return (
             ('quick',
              f'Быстрее {self.MIDDLE_BORDER+1} мин. ({count_list[0]})'),
-            ('middle', f'Быстрее {self.LONG_BORDER+1} мин. ({count_list[1]})'),
-            ('long', f'Дольше {self.LONG_BORDER} мин. ({count_list[2]})')
+            ('middle', f'Быстрее {self.LONG_BORDER} мин. ({count_list[1]})'),
+            ('long', f'Дольше {self.LONG_BORDER+1} мин. ({count_list[2]})')
         )
 
     def queryset(self, request, queryset):
@@ -120,7 +120,7 @@ class RecipeAdmin(admin.ModelAdmin):
     @admin.display(description='Изображение')
     def image_override(self, recipe):
         return mark_safe(
-            f'<img src="{recipe.image.url}" style="max-height: 200px;"/>'
+            f'<img src="{recipe.image.url}" width="100" height="100"/>'
         )
 
 
@@ -182,16 +182,19 @@ class FoodgramUserAdmin(UserAdmin):
                     'avatar_override', 'followers_count',
                     'authors_count', 'recipe_count')
     search_fields = ('email', 'username',)
+    readonly_fields = ('avatar_override',)
     list_filter = (FollowersFilter, AuthorsFilter, RecipesFilter)
     ordering = ('username',)
+    # list_editable = ('avatar_override',)
     fieldsets = (
         (None, {'fields': ('username',)}),
         (_('Personal info'), {'fields': (
-            'first_name', 'last_name', 'email', 'avatar_override'
+            'first_name', 'last_name', 'email',
         )}),
+        (_('Аватар'), {'fields': ('avatar', 'avatar_override')}),
         (_('Permissions'), {
             'fields': (
-                'is_active', 'is_staff', 'is_superuser', 'user_permissions'
+                'is_active', 'is_staff'
             ),
         }),
         (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
@@ -220,4 +223,8 @@ class FoodgramUserAdmin(UserAdmin):
 
     @admin.display(description='Аватар')
     def avatar_override(self, user):
-        return mark_safe(f'<img src="{user.avatar.url}"/>')
+        if user.avatar:
+            return mark_safe(
+                f'<img src="{user.avatar.url}" width="100" height="100"/>'
+            )
+        return 'Нет изображения'

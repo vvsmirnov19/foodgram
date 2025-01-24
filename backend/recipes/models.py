@@ -14,7 +14,8 @@ class FoodgramUser(AbstractUser):
         max_length=MAX_LENGHT_EMAIL
     )
     avatar = models.ImageField(
-        upload_to='users/', null=True, blank=True
+        upload_to='users/', null=True,
+        blank=True, verbose_name='Аватар пользователя'
     )
     username = models.CharField(
         verbose_name='Логин', max_length=MAX_USER_LENGHT, unique=True,
@@ -130,13 +131,16 @@ class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
+        verbose_name='Рецепт'
     )
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
+        verbose_name='Продукт'
     )
     amount = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(MINIMAL_AMOUNT)], default=MINIMAL_AMOUNT
+        validators=[MinValueValidator(MINIMAL_AMOUNT)], default=MINIMAL_AMOUNT,
+        verbose_name='Мера'
     )
 
     class Meta:
@@ -145,6 +149,9 @@ class RecipeIngredient(models.Model):
             fields=['recipe', 'ingredient'],
             name='unique_recipeingredients'
         ),)
+
+    def __str__(self):
+        return f'{self.ingredient.name}, {self.ingredient.measurement_unit}'
 
 
 class UserRecipeRelation(models.Model):
