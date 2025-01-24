@@ -1,5 +1,4 @@
 from django.urls import include, path
-from django.views.generic.base import TemplateView
 from rest_framework import routers
 
 from api.views import (FoodgramUserViewSet, IngredientViewSet,
