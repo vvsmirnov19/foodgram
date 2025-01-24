@@ -1,4 +1,4 @@
-import datetime as dt
+from datetime import datetime as dt
 
 DELIMETER = '\n'
 
@@ -14,9 +14,18 @@ TEMPLATE_INGREDIENTS = '{}. {} {} {}.'
 
 TEMPLATE_RECIPES = '{}. {}'
 
+# на докер образ не получилось установить локали, поэтому реализую
+# дату таким образом
+MONTHS = [
+    'января', 'февраля', 'марта',
+    'апреля', 'мая', 'июня',
+    'июля', 'августа', 'сентября',
+    'октября', 'ноября', 'декабря'
+]
+
 
 def form_shopping_cart(recipes_names, ingredients):
-    date = dt.date.today().strftime('%d %B %Y')
+    date = f'{dt.now().day} {MONTHS[dt.now().month]} {dt.now().year}'
     ingredients_to_text = DELIMETER.join([
         TEMPLATE_INGREDIENTS.format(
             number,

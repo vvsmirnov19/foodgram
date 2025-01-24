@@ -94,6 +94,7 @@ class RecipeAdmin(admin.ModelAdmin):
         'author__last_name', 'author__username', 'tags__name'
     )
     list_filter = ['tags', 'author', CookingTimeFilter]
+    readonly_fields = ('image_override',)
     inlines = (IngredientsInLine, )
 
     @admin.display(description='Избранное')
@@ -185,7 +186,6 @@ class FoodgramUserAdmin(UserAdmin):
     readonly_fields = ('avatar_override',)
     list_filter = (FollowersFilter, AuthorsFilter, RecipesFilter)
     ordering = ('username',)
-    # list_editable = ('avatar_override',)
     fieldsets = (
         (None, {'fields': ('username',)}),
         (_('Personal info'), {'fields': (
