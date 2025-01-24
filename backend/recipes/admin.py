@@ -88,7 +88,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'author', 'favorite_count', 'tags_override',
-                    'ingredients_override', 'cooking_time', 'image')
+                    'ingredients_override', 'cooking_time', 'image_override')
     search_fields = (
         'name', 'author__first_name',
         'author__last_name', 'author__username', 'tags__name'
@@ -118,7 +118,7 @@ class RecipeAdmin(admin.ModelAdmin):
         ])
 
     @admin.display(description='Изображение')
-    def image(self, recipe):
+    def image_override(self, recipe):
         return mark_safe(
             f'<img src="{recipe.image.url}" style="max-height: 200px;"/>'
         )
@@ -179,7 +179,7 @@ class RecipesFilter(UserSimpleListFilter):
 @admin.register(User)
 class FoodgramUserAdmin(UserAdmin):
     list_display = ('id', 'email', 'username', 'full_name',
-                    'avatar', 'followers_count',
+                    'avatar_override', 'followers_count',
                     'authors_count', 'recipe_count')
     search_fields = ('email', 'username',)
     list_filter = (FollowersFilter, AuthorsFilter, RecipesFilter)
@@ -187,7 +187,7 @@ class FoodgramUserAdmin(UserAdmin):
     fieldsets = (
         (None, {'fields': ('username',)}),
         (_('Personal info'), {'fields': (
-            'first_name', 'last_name', 'email', 'avatar'
+            'first_name', 'last_name', 'email', 'avatar_override'
         )}),
         (_('Permissions'), {
             'fields': (
@@ -219,5 +219,5 @@ class FoodgramUserAdmin(UserAdmin):
         return count
 
     @admin.display(description='Аватар')
-    def avatar(self, user):
+    def avatar_override(self, user):
         return mark_safe(f'<img src="{user.avatar.url}"/>')
