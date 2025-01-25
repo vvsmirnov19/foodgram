@@ -36,8 +36,8 @@ class CookingTimeFilter(admin.SimpleListFilter):
         return (
             ('quick',
              f'Быстрее {self.MIDDLE_BORDER+1} мин. ({count_list[0]})'),
-            ('middle', f'Быстрее {self.LONG_BORDER} мин. ({count_list[1]})'),
-            ('long', f'Дольше {self.LONG_BORDER+1} мин. ({count_list[2]})')
+            ('middle', f'Быстрее {self.LONG_BORDER+1} мин. ({count_list[1]})'),
+            ('long', f'{self.LONG_BORDER+1} мин. и дольше ({count_list[2]})')
         )
 
     def queryset(self, request, queryset):
@@ -64,7 +64,8 @@ class IngridientAdmin(RecipeCountMixin, admin.ModelAdmin):
 
 class IngredientsInLine(admin.StackedInline):
     model = RecipeIngredient
-    extra = 1
+    fk_name = 'recipe'
+    extra = 0
     verbose_name = 'Продукт'
     verbose_name_plural = 'Продукты'
 
@@ -183,13 +184,13 @@ class FoodgramUserAdmin(UserAdmin):
                     'avatar_override', 'followers_count',
                     'authors_count', 'recipe_count')
     search_fields = ('email', 'username',)
-    readonly_fields = ('avatar_override',)
+    readonly_fields = ('avatar_override', 'password_change')
     list_filter = (FollowersFilter, AuthorsFilter, RecipesFilter)
     ordering = ('username',)
     fieldsets = (
         (None, {'fields': ('username',)}),
         (_('Personal info'), {'fields': (
-            'first_name', 'last_name', 'email',
+            'first_name', 'last_name', 'email', 'password_change'
         )}),
         (_('Аватар'), {'fields': ('avatar', 'avatar_override')}),
         (_('Permissions'), {
@@ -199,6 +200,12 @@ class FoodgramUserAdmin(UserAdmin):
         }),
         (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
     )
+
+    @admin.display(description='Изменение пароля')
+    @mark_safe
+    def password_change(self, user):
+        url = reverse('admin:auth_user_password_change', args=(user.id,))
+        return f'<a href="{url}">Изменить пароль</a>'
 
     @admin.display(description='Полное имя')
     def full_name(self, user):
