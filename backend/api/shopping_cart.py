@@ -1,5 +1,4 @@
 from datetime import datetime as dt
-# import locale
 
 DELIMETER = '\n'
 
@@ -14,8 +13,6 @@ TEMPLATE_INGREDIENTS = '{}. {} {} {}.'
 TEMPLATE_RECIPES = '{}. {}'
 
 MAX_MEASURE_VISUAL = 2
-
-# locale.setlocale(locale.LC_ALL, "ru_RU.UTF-8")
 
 # на докер образ не получилось установить локали, поэтому реализую
 # дату таким образом
